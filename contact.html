@@ -311,7 +311,7 @@
             border: 1px solid #fef08a;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             position: relative;
         }
 
@@ -330,15 +330,6 @@
             gap: 8px;
         }
 
-        .admin-badge {
-            background: #ef4444;
-            color: white;
-            font-size: 11px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-
         .review-card-stars {
             color: #ca8a04;
             font-size: 15px;
@@ -351,10 +342,58 @@
             word-break: break-word;
         }
 
+        /* Стильный ответ разработчика (в стиле Google Play, адаптированный под сайт мёда) */
+        .playmarket-reply-box {
+            background: #ffffff;
+            border: 1px solid #fef08a;
+            border-left: 4px solid #ca8a04;
+            padding: 12px 15px;
+            margin-top: 8px;
+            margin-left: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .playmarket-reply-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+
+        .playmarket-reply-author {
+            font-weight: 800;
+            color: #713f12;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .playmarket-reply-badge {
+            background-color: #ca8a04;
+            color: #ffffff;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .playmarket-reply-text {
+            font-size: 14px;
+            color: #451a03;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
         .review-actions {
             display: flex;
             gap: 8px;
             margin-top: 5px;
+            flex-wrap: wrap;
         }
 
         .action-btn {
@@ -362,9 +401,10 @@
             border: none;
             cursor: pointer;
             font-size: 12px;
-            padding: 4px 10px;
+            padding: 5px 12px;
             border-radius: 6px;
             font-weight: 600;
+            transition: var(--transition);
         }
 
         .edit-btn {
@@ -385,6 +425,46 @@
 
         .delete-btn:hover {
             background: #fca5a5;
+        }
+
+        .reply-admin-btn {
+            color: #1e40af;
+            background: #dbeafe;
+            border: 1px solid #bfdbfe;
+        }
+        .reply-admin-btn:hover {
+            background: #bfdbfe;
+        }
+
+        /* Модальное окно для ответа админа */
+        .admin-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .admin-modal.active {
+            display: flex;
+        }
+        .admin-modal-content {
+            background: #fff;
+            padding: 25px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 450px;
+            border: 2px solid #ca8a04;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .admin-modal-content h3 {
+            color: #713f12;
+            font-size: 18px;
+            margin: 0;
         }
 
         @media (max-width: 768px) {
@@ -482,7 +562,7 @@
                 </div>
 
                 <form class="review-form" id="reviewForm">
-                    <input type="hidden" id="editIndex" value="-1">
+                    <input type="hidden" id="editRowId" value="">
                     <div class="rating-select-group">
                         <span class="rating-label">Ваша оценка:</span>
                         <div class="rating-stars" id="starContainer">
@@ -494,13 +574,13 @@
                         </div>
                         <input type="hidden" id="reviewRating" value="5">
                     </div>
-                    <input type="text" id="reviewAuthor" class="review-input" placeholder="Имя" required>
-                    <textarea id="reviewText" class="review-textarea" placeholder="Ваш отзыв" required></textarea>
+                    <input type="text" id="reviewAuthor" class="review-input" placeholder="Имя (или логин администратора)" required>
+                    <textarea id="reviewText" class="review-textarea" placeholder="Ваш отзыв (или пароль администратора при вводе логина Admin)" required></textarea>
                     <button type="submit" class="submit-review-btn" id="submitBtn">Оставить отзыв</button>
                 </form>
 
                 <div class="reviews-list" id="reviewsList">
-                    <div class="no-reviews-msg">Загрузка отзывов из облака...</div>
+                    <div class="no-reviews-msg">Загрузка отзывов из Google Таблиц...</div>
                 </div>
             </div>
         </main>
@@ -508,6 +588,20 @@
         <footer>
             <p>&copy; 2026 Экспериментальный сайт о мёде. Все права защищены.</p>
         </footer>
+    </div>
+
+    <!-- Модальное окно для ответа администратора -->
+    <div id="adminModal" class="admin-modal">
+        <div class="admin-modal-content">
+            <h3>Ответ администратора</h3>
+            <input type="hidden" id="replyRowId" value="">
+            <input type="password" id="adminModalPass" class="review-input" placeholder="Введите пароль администратора" required>
+            <textarea id="adminModalText" class="review-textarea" placeholder="Текст ответа клиенту..." required></textarea>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="action-btn delete-btn" id="closeAdminModal">Отмена</button>
+                <button type="button" class="action-btn edit-btn" id="sendAdminReplyBtn">Отправить ответ</button>
+            </div>
+        </div>
     </div>
 
     <!-- Попапы -->
@@ -538,7 +632,7 @@
                     <span class="order-heading">
                         ЗАКАЗ <span class="order-edit-hint">(изменить)</span>
                     </span>
-                    <span class="order-total">Итого: <strong id="bar-total-price">0 ₽</strong></span>
+                    <span class="order-total">Итого: <strong id="bar-total-price">0 ₸</strong></span>
                 </div>
                 <div id="bar-items-text" class="order-items-preview">пусто</div>
             </div>
@@ -551,11 +645,8 @@
 
     <script src="cart.js"></script>
     <script>
-        const BIN_ID = "6a7f48ffda38895dfee55c83"; 
-        const API_KEY = "$2a$10$o1monbN8e52293mD0DQxY.QR1cgKvUrLIqDAR5Ihv3tFqLz0R2Mhy";
-
-        const ADMIN_LOGIN = "Admin";
-        const ADMIN_PASS = "honey123";
+        // Ссылка на ваше развернутое веб-приложение Google Apps Script
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz0EVZFnodnxqdg8GIyN0RegrbHccGnX3ZPn9gvftpjnkO5qAb2V6iJmlgiY6xg8SOKjQ/exec";
 
         const stars = document.querySelectorAll('#starContainer span');
         const ratingInput = document.getElementById('reviewRating');
@@ -590,30 +681,12 @@
 
         async function fetchReviews() {
             try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-                    headers: { 'X-Master-Key': API_KEY }
-                });
+                const response = await fetch(`${WEB_APP_URL}?action=get`);
                 const data = await response.json();
-                let records = Array.isArray(data.record) ? data.record : [];
-                return records.filter(rev => rev && rev.author && rev.text && rev.sessionId !== 'system');
+                return Array.isArray(data) ? data : [];
             } catch (error) {
                 console.error("Ошибка загрузки отзывов:", error);
                 return [];
-            }
-        }
-
-        async function syncReviewsToCloud(reviews) {
-            try {
-                await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': API_KEY
-                    },
-                    body: JSON.stringify(reviews)
-                });
-            } catch (error) {
-                console.error("Ошибка сохранения отзывов:", error);
             }
         }
 
@@ -636,38 +709,64 @@
             }
 
             let totalScore = 0;
-            reviews.forEach(rev => totalScore += Number(rev.rating));
+            reviews.forEach(rev => totalScore += Number(rev.rating || 5));
             const avgRating = (totalScore / reviews.length).toFixed(1);
             const fullStarsCount = Math.round(totalScore / reviews.length);
             summaryStars.textContent = '★'.repeat(fullStarsCount) + '☆'.repeat(5 - fullStarsCount);
             summaryCount.textContent = `(${reviews.length} ${getDeclension(reviews.length)}) — ${avgRating} / 5`;
 
-            reviews.forEach((rev, index) => {
+            reviews.forEach((rev) => {
                 const card = document.createElement('div');
                 card.className = 'review-card';
 
-                const starsHtml = '★'.repeat(rev.rating) + '☆'.repeat(5 - rev.rating);
+                const starsHtml = '★'.repeat(rev.rating || 5) + '☆'.repeat(5 - (rev.rating || 5));
                 const isAuthor = rev.sessionId === currentSessionId;
                 let actionsHtml = '';
 
+                // Блок кнопок управления
                 if (isAuthor || isAdmin) {
-                    actionsHtml = `
+                    actionsHtml += `<div class="review-actions">`;
+                    if (isAuthor) {
+                        actionsHtml += `<button class="action-btn edit-btn" onclick="startEditReview('${rev.rowId}', '${encodeURIComponent(rev.author)}', '${encodeURIComponent(rev.text)}', '${rev.rating}')">Изменить</button>`;
+                    }
+                    actionsHtml += `<button class="action-btn delete-btn" onclick="removeReview('${rev.rowId}')">Удалить</button>`;
+                    
+                    if (isAdmin) {
+                        actionsHtml += `<button class="action-btn reply-admin-btn" onclick="openAdminReplyModal('${rev.rowId}')">Ответить</button>`;
+                    }
+                    actionsHtml += `</div>`;
+                } else if (isAdmin) {
+                    actionsHtml += `
                         <div class="review-actions">
-                            ${isAuthor ? `<button class="action-btn edit-btn" onclick="startEditReview(${index})">Изменить</button>` : ''}
-                            <button class="action-btn delete-btn" onclick="removeReview(${index})">Удалить</button>
+                            <button class="action-btn delete-btn" onclick="removeReview('${rev.rowId}')">Удалить</button>
+                            <button class="action-btn reply-admin-btn" onclick="openAdminReplyModal('${rev.rowId}')">Ответить</button>
+                        </div>
+                    `;
+                }
+
+                // Блок ответа администратора в стиле Google Play
+                let adminReplyHtml = '';
+                if (rev.adminReply) {
+                    adminReplyHtml = `
+                        <div class="playmarket-reply-box">
+                            <div class="playmarket-reply-header">
+                                <span class="playmarket-reply-author">
+                                    Пасека «Натуральный мёд» 
+                                    <span class="playmarket-reply-badge">Официальный ответ</span>
+                                </span>
+                            </div>
+                            <div class="playmarket-reply-text">${escapeHtml(rev.adminReply)}</div>
                         </div>
                     `;
                 }
 
                 card.innerHTML = `
                     <div class="review-card-header">
-                        <span class="review-author-name">
-                            ${escapeHtml(rev.author)} 
-                            ${rev.isAdminPost ? '<span class="admin-badge">Админ</span>' : ''}
-                        </span>
+                        <span class="review-author-name">${escapeHtml(rev.author)}</span>
                         <span class="review-card-stars">${starsHtml}</span>
                     </div>
                     <div class="review-card-text">${escapeHtml(rev.text)}</div>
+                    ${adminReplyHtml}
                     ${actionsHtml}
                 `;
 
@@ -685,8 +784,9 @@
         }
 
         function escapeHtml(text) {
+            if (!text) return '';
             const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+            return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
         const form = document.getElementById('reviewForm');
@@ -696,69 +796,146 @@
             const authorInput = document.getElementById('reviewAuthor').value.trim();
             const textInput = document.getElementById('reviewText').value.trim();
             const rating = parseInt(ratingInput.value);
-            const editIndex = parseInt(document.getElementById('editIndex').value);
+            const rowId = document.getElementById('editRowId').value;
             const sessionId = createSessionId();
 
             if (!authorInput || !textInput) return;
 
-            if (authorInput === ADMIN_LOGIN && textInput === ADMIN_PASS) {
-                localStorage.setItem('is_honey_admin', 'true');
-                alert('Режим администратора активирован!');
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Отправка...';
+
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'save',
+                        rowId: rowId,
+                        author: authorInput,
+                        text: textInput,
+                        rating: rating,
+                        sessionId: sessionId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'admin_success') {
+                    localStorage.setItem('is_honey_admin', 'true');
+                    alert('Режим администратора успешно активирован!');
+                } else if (result.status === 'admin_error') {
+                    alert('Неверный пароль администратора!');
+                } else if (result.status === 'success') {
+                    if (rowId) {
+                        alert('Отзыв успешно изменен!');
+                    } else {
+                        alert('Отзыв успешно добавлен!');
+                    }
+                }
+
                 form.reset();
-                document.getElementById('editIndex').value = '-1';
-                document.getElementById('submitBtn').innerText = 'Оставить отзыв';
+                document.getElementById('editRowId').value = '';
+                submitBtn.textContent = 'Оставить отзыв';
                 ratingInput.value = 5;
                 updateStars(5);
                 renderReviews();
+            } catch (error) {
+                console.error('Ошибка отправки:', error);
+                alert('Произошла ошибка при отправке. Проверьте подключение.');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+
+        window.removeReview = async function(rowId) {
+            if (confirm('Удалить этот отзыв?')) {
+                const isAdmin = localStorage.getItem('is_honey_admin') === 'true';
+                let adminPass = '';
+                if (isAdmin) {
+                    adminPass = prompt('Введите пароль администратора для подтверждения удаления:') || '';
+                }
+
+                try {
+                    const response = await fetch(WEB_APP_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({
+                            action: 'delete',
+                            rowId: rowId,
+                            sessionId: createSessionId(),
+                            adminPass: adminPass
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        renderReviews();
+                    } else {
+                        alert(result.message || 'Ошибка удаления');
+                    }
+                } catch (e) {
+                    alert('Ошибка соединения');
+                }
+            }
+        };
+
+        window.startEditReview = function(rowId, author, text, rating) {
+            document.getElementById('reviewAuthor').value = decodeURIComponent(author);
+            document.getElementById('reviewText').value = decodeURIComponent(text);
+            ratingInput.value = rating;
+            document.getElementById('editRowId').value = rowId;
+            document.getElementById('submitBtn').innerText = 'Сохранить изменения';
+
+            updateStars(rating);
+            window.scrollTo({ top: form.offsetTop - 50, behavior: 'smooth' });
+        };
+
+        // Логика модального окна ответа администратора
+        window.openAdminReplyModal = function(rowId) {
+            document.getElementById('replyRowId').value = rowId;
+            document.getElementById('adminModalPass').value = '';
+            document.getElementById('adminModalText').value = '';
+            document.getElementById('adminModal').classList.add('active');
+        };
+
+        document.getElementById('closeAdminModal').addEventListener('click', () => {
+            document.getElementById('adminModal').classList.remove('active');
+        });
+
+        document.getElementById('sendAdminReplyBtn').addEventListener('click', async () => {
+            const rowId = document.getElementById('replyRowId').value;
+            const adminPass = document.getElementById('adminModalPass').value;
+            const replyText = document.getElementById('adminModalText').value;
+
+            if (!adminPass || !replyText) {
+                alert('Заполните все поля!');
                 return;
             }
 
-            let reviews = await fetchReviews();
-
-            if (editIndex > -1) {
-                reviews[editIndex].text = textInput;
-                reviews[editIndex].rating = rating;
-                document.getElementById('editIndex').value = '-1';
-                document.getElementById('submitBtn').innerText = 'Оставить отзыв';
-            } else {
-                reviews.unshift({
-                    author: authorInput,
-                    text: textInput,
-                    rating: rating,
-                    sessionId: sessionId,
-                    isAdminPost: false
+            try {
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'adminReply',
+                        rowId: rowId,
+                        adminPass: adminPass,
+                        replyText: replyText
+                    })
                 });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    localStorage.setItem('is_honey_admin', 'true');
+                    document.getElementById('adminModal').classList.remove('active');
+                    alert('Ответ успешно отправлен!');
+                    renderReviews();
+                } else {
+                    alert(result.message || 'Неверный пароль администратора!');
+                }
+            } catch (e) {
+                alert('Ошибка соединения');
             }
-
-            await syncReviewsToCloud(reviews);
-            form.reset();
-            ratingInput.value = 5;
-            updateStars(5);
-            renderReviews();
         });
-
-        window.removeReview = async function(index) {
-            if (confirm('Удалить этот отзыв?')) {
-                let reviews = await fetchReviews();
-                reviews.splice(index, 1);
-                await syncReviewsToCloud(reviews);
-                renderReviews();
-            }
-        };
-
-        window.startEditReview = async function(index) {
-            let reviews = await fetchReviews();
-            let rev = reviews[index];
-
-            document.getElementById('reviewAuthor').value = rev.author;
-            document.getElementById('reviewText').value = rev.text;
-            ratingInput.value = rev.rating;
-            document.getElementById('editIndex').value = index;
-            document.getElementById('submitBtn').innerText = 'Сохранить изменения';
-
-            updateStars(rev.rating);
-            window.scrollTo({ top: form.offsetTop - 50, behavior: 'smooth' });
-        };
 
         renderReviews();
     </script>
