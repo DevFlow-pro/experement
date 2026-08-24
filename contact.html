@@ -357,28 +357,12 @@
         }
 
         .playmarket-reply-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             font-size: 13px;
         }
 
         .playmarket-reply-author {
             font-weight: 800;
             color: #713f12;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .playmarket-reply-badge {
-            background-color: #ca8a04;
-            color: #ffffff;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 700;
-            text-transform: uppercase;
         }
 
         .playmarket-reply-text {
@@ -386,6 +370,7 @@
             color: #451a03;
             line-height: 1.4;
             word-break: break-word;
+            margin-top: 2px;
         }
 
         .review-actions {
@@ -470,7 +455,6 @@
             margin: 0;
         }
 
-        /* Стиль для красного предупреждения антимат фильтра */
         .profanity-error-msg {
             color: #dc2626;
             background-color: #fee2e2;
@@ -597,8 +581,7 @@
                     <input type="text" id="reviewAuthor" class="review-input" placeholder="Ваше имя" required>
                     <textarea id="reviewText" class="review-textarea" placeholder="Ваш отзыв..." required></textarea>
                     
-                    <!-- Блок для красной предупреждающей надписи антимат-фильтра -->
-                    <div id="profanityError" class="profanity-error-msg">⚠️ Ругательства, нецензурная лексика и грубые слова в этом отзыве неприемлемы! Пожалуйста, выражайтесь культурно.</div>
+                    <div id="profanityError" class="profanity-error-msg">⚠️ Ругательства, оскорбления (по полу, религии, нации) и нецензурная лексика в этом отзыве неприемлемы!</div>
 
                     <button type="submit" class="submit-review-btn" id="submitBtn">Оставить отзыв</button>
                 </form>
@@ -632,7 +615,7 @@
                 <input type="hidden" id="editReviewRating" value="5">
             </div>
             <textarea id="adminModalText" class="review-textarea" placeholder="Введите текст..." required></textarea>
-            <div id="modalProfanityError" class="profanity-error-msg">⚠️ Обнаружены запрещенные слова или мат!</div>
+            <div id="modalProfanityError" class="profanity-error-msg">⚠️ Обнаружены запрещенные слова или оскорбления!</div>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" class="action-btn delete-btn" id="closeAdminModal" style="background:#6b7280; border-color:#4b5563;">Отмена</button>
                 <button type="button" class="action-btn reply-admin-btn" id="sendAdminReplyBtn">Сохранить</button>
@@ -683,43 +666,63 @@
     <script>
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwGjt-ws8d1QyPu2boOwOMBux52AJtll8GCsWJ0gpv0iPO2vkttCqRh9EC1dw5Ni13PmQ/exec";
 
-        // ЖЕСТКИЙ АНТИМАТ ФИЛЬТР (включает русский матерный лексикон, корни, производные и грубые слова вроде говно/дерьмо)
+        // КОМПЛЕКСНЫЙ АНТИМАТ И ФИЛЬТР ОСКОРБЛЕНИЙ (РУССКИЙ, КАЗАХСКИЙ, АНГЛИЙСКИЙ + РЕЛИГИЯ/ПОЛ/РАСА)
         const badWords = [
-            'хуй', 'хуя', 'хую', 'хуем', 'хуе', 'хуи', 'хую', 'хуев', 'хуях', 'хуями', 'охуе', 'захуе', 'похуе', 'ныхуя', 'нихуя', 'хуесос', 'хуепле', 'хуеверт',
-            'пизд', 'писд', 'пезд', 'пизда', 'пизды', 'пизде', 'пизду', 'пиздой', 'пиздой', 'пиздец', 'пиздеж', 'пиздеть', 'пиздит', 'спиздил', 'отпизди', 'пиздюк',
-            'еб', 'ебл', 'ебы', 'ебн', 'ебт', 'еба', 'ебы', 'ебе', 'ебу', 'еби', 'ебо', 'ебь', 'ебать', 'ебал', 'ебал', 'ебаный', 'ебану', 'ебнуть', 'ебнулся', 'выеб', 'заеб', 'поеб', 'наеб', 'подеб', 'обезбаш', 'уеб', 'перееб',
+            // Русский мат и грубые слова
+            'хуй', 'хуя', 'хую', 'хуем', 'хуе', 'хуи', 'хуев', 'хуях', 'хуями', 'охуе', 'захуе', 'похуе', 'ныхуя', 'нихуя', 'хуесос', 'хуепл', 'хуеверт',
+            'пизд', 'писд', 'пезд', 'пизда', 'пизды', 'пизде', 'пизду', 'пиздой', 'пиздец', 'пиздеж', 'пиздеть', 'пиздит', 'спиздил', 'отпизди', 'пиздюк',
+            'еб', 'ебл', 'ебы', 'ебн', 'ебт', 'еба', 'ебе', 'ебу', 'еби', 'ебо', 'ебь', 'ебать', 'ебал', 'ебаный', 'ебану', 'ебнуть', 'ебнулся', 'выеб', 'заеб', 'поеб', 'наеб', 'уеб', 'перееб',
             'бля', 'блять', 'блядь', 'бляд', 'блядина', 'бляду', 'блядо', 'блядск', 'бляди',
             'сук', 'сука', 'суки', 'суку', 'сучка', 'сучкам', 'сучками',
             'мраз', 'мразот', 'мрази', 'мразь',
             'шлюх', 'шлюха', 'шлюхи', 'шлюшку',
             'гондон', 'гандон', 'гондоны', 'гандоны',
-            'мудак', 'мудила', 'мудило', 'муди', 'модем',
+            'мудак', 'мудила', 'мудило', 'муди',
             'дерьм', 'дерьмо', 'дерьме', 'дерьмом', 'говн', 'говно', 'говна', 'говну', 'говне', 'говном', 'говен',
-            'сран', 'срать', 'срань', 'срал', 'серут', 'посрал', 'унитазный',
+            'сран', 'срать', 'срань', 'срал', 'серут', 'посрал',
             'чмо', 'чмыр', 'чмошник',
-            'пидор', 'пидар', 'педик', 'пидорас', 'пидарас', 'петух', 'петухи',
-            'залуп', 'залупа', 'манда', 'мудо', 'елда', 'елдын', 'дроч', 'дрочить', 'дрочил', 'задрот'
+            'пидор', 'пидар', 'педик', 'пидорас', 'пидарас', 'петух', 'петухи', 'сайқал',
+            'залуп', 'залупа', 'манда', 'мудо', 'елда', 'елдын', 'дроч', 'дрочить', 'дрочил', 'задрот',
+
+            // Казахский мат и грубые слова (включая популярные оскорбления и корни)
+            'қотақ', 'котак', 'құтақ', 'кутак', 'қотақбас', 'котакбас', 'қотағым',
+            'текпе', 'мисыз', 'ақымақ', 'акымак', 'есек', 'айғыр', 'сирақ',
+            'шешен', 'шешең', 'шешенин', 'шешенді', 'шешенс', 'шешеңді', 'шешени', 'мамбет', 'мамбети',
+            'сөг', 'сог', 'боқ', 'бок', 'боғы', 'бокы', 'арыстанбас',
+            'сайкал', 'сайқал', 'жынды', 'ебанутый', 'сирак', 'арсыз',
+
+            // Английский мат и оскорбления (English profanity)
+            'fuck', 'fucker', 'fucking', 'fucked', 'motherfucker',
+            'shit', 'shitty', 'bullshit', 'shitter',
+            'bitch', 'bitches', 'bitchy',
+            'asshole', 'ass', 'assholes',
+            'dick', 'dickhead', 'dicks',
+            'cunt', 'cunts',
+            'bastard', 'bastards',
+            'whore', 'slut', 'sluts',
+            'cock', 'cocksucker',
+            'pussy', 'piss', 'prick', 'crap', 'nigger', 'nigga', 'fag', 'faggot', 'retard',
+
+            // Оскорбления по религии, полу, расе и дискриминация (рус/каз/англ)
+            'жид', 'хач', 'чурка', 'ниггер', 'черножоп', 'узкоглаз', 'косоглаз',
+            'хохол', 'кацап', 'москаль', 'пиндос', 'бусурман', 'неверный',
+            'гей', 'лесби', 'транс', 'педофил', 'шлюха', 'проститутка'
         ];
 
         function containsBadWords(text) {
             if (!text) return false;
-            // Приводим текст к нижнему регистру и заменяем похожие латинские буквы на русские для обхода фильтра
             let clean = text.toLowerCase()
                 .replace(/a/g, 'а').replace(/e/g, 'е').replace(/o/g, 'о').replace(/p/g, 'р')
                 .replace(/c/g, 'с').replace(/y/g, 'у').replace(/x/g, 'х').replace(/i/g, 'и')
                 .replace(/3/g, 'з').replace(/0/g, 'о').replace(/1/g, 'и');
 
-            // Убираем всё кроме букв для проверки корней
-            let words = clean.match(/[а-яё]+/g);
+            let words = clean.match(/[а-яөұүіәғқңһa-z]+/g);
             if (!words) return false;
 
             for (let w of words) {
                 for (let bw of badWords) {
-                    if (w.includes(bw) || bw.includes(w)) {
-                        // Точная проверка или частичное совпадение корня
-                        if (w === bw || (w.length >= 3 && bw.length >= 3 && (w.startsWith(bw) || w.endsWith(bw) || w.includes(bw)))) {
-                            return true;
-                        }
+                    if (w === bw || (w.length >= 3 && bw.length >= 3 && (w.includes(bw) || bw.startsWith(bw) || bw.endsWith(bw)))) {
+                        return true;
                     }
                 }
             }
@@ -828,10 +831,7 @@
                     adminReplyHtml = `
                         <div class="playmarket-reply-box">
                             <div class="playmarket-reply-header">
-                                <span class="playmarket-reply-author">
-                                    Пасека «Натуральный мёд» 
-                                    <span class="playmarket-reply-badge">Официальный ответ</span>
-                                </span>
+                                <span class="playmarket-reply-author">Пасека «Натуральный мёд»</span>
                             </div>
                             <div class="playmarket-reply-text">${escapeHtml(rev.adminReply)}</div>
                         </div>
@@ -884,7 +884,6 @@
 
             if (!authorInput || !textInput) return;
 
-            // Проверка антиматом
             if (containsBadWords(authorInput) || containsBadWords(textInput)) {
                 profanityErrorBox.style.display = 'block';
                 return;
@@ -914,9 +913,6 @@
 
                 if (result.status === 'admin_success') {
                     localStorage.setItem('is_honey_admin', 'true');
-                    alert('Режим администратора успешно активирован на этом устройстве!');
-                } else if (result.status === 'success') {
-                    alert('Спасибо! Ваш отзыв успешно добавлен.');
                 }
 
                 form.reset();
@@ -928,7 +924,6 @@
                 await renderReviews();
             } catch (error) {
                 console.error('Ошибка отправки:', error);
-                alert('Не удалось отправить отзыв. Если он не появился, пожалуйста, проверьте соединение или обновите страницу.');
             } finally {
                 submitBtn.disabled = false;
             }
@@ -952,13 +947,10 @@
                     });
                     const result = await response.json();
                     if (result.status === 'success') {
-                        alert('Отзыв успешно удален.');
                         await renderReviews();
-                    } else {
-                        alert(result.message || 'Ошибка удаления');
                     }
                 } catch (e) {
-                    alert('Ошибка соединения. Обновите страницу и попробуйте снова.');
+                    console.error(e);
                 }
             }
         };
@@ -995,12 +987,8 @@
             const textVal = document.getElementById('adminModalText').value;
             const modalErr = document.getElementById('modalProfanityError');
 
-            if (!textVal) {
-                alert('Поле не может быть пустым!');
-                return;
-            }
+            if (!textVal) return;
 
-            // Проверка антиматом в модалке (для редактирования клиентом)
             if (mode === 'edit' && containsBadWords(textVal)) {
                 modalErr.style.display = 'block';
                 return;
@@ -1034,14 +1022,11 @@
                 });
                 const result = await response.json();
                 if (result.status === 'success') {
-                    alert('Изменения успешно сохранены!');
                     document.getElementById('adminModal').classList.remove('active');
                     await renderReviews();
-                } else {
-                    alert(result.message || 'Ошибка выполнения операции');
                 }
             } catch (e) {
-                alert('Ошибка соединения. Обновите страницу.');
+                console.error(e);
             }
         });
 
