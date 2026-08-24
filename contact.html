@@ -429,6 +429,17 @@
             transform: translateY(-1px);
         }
 
+        .edit-btn {
+            color: #ffffff;
+            background: #f59e0b;
+            border: 1px solid #d97706;
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2);
+        }
+        .edit-btn:hover {
+            background: #d97706;
+            transform: translateY(-1px);
+        }
+
         .admin-modal {
             display: none;
             position: fixed;
@@ -457,6 +468,24 @@
             color: #713f12;
             font-size: 18px;
             margin: 0;
+        }
+
+        /* Стиль для красного предупреждения антимат фильтра */
+        .profanity-error-msg {
+            color: #dc2626;
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @media (max-width: 768px) {
@@ -567,6 +596,10 @@
                     </div>
                     <input type="text" id="reviewAuthor" class="review-input" placeholder="Ваше имя" required>
                     <textarea id="reviewText" class="review-textarea" placeholder="Ваш отзыв..." required></textarea>
+                    
+                    <!-- Блок для красной предупреждающей надписи антимат-фильтра -->
+                    <div id="profanityError" class="profanity-error-msg">⚠️ Ругательства, нецензурная лексика и грубые слова в этом отзыве неприемлемы! Пожалуйста, выражайтесь культурно.</div>
+
                     <button type="submit" class="submit-review-btn" id="submitBtn">Оставить отзыв</button>
                 </form>
 
@@ -581,15 +614,28 @@
         </footer>
     </div>
 
-    <!-- Модальное окно для ответа администратора -->
+    <!-- Модальное окно для ответа / редактирования -->
     <div id="adminModal" class="admin-modal">
         <div class="admin-modal-content">
-            <h3>Ответ администратора</h3>
+            <h3 id="modalTitle">Ответ администратора</h3>
             <input type="hidden" id="replyRowId" value="">
-            <textarea id="adminModalText" class="review-textarea" placeholder="Введите текст ответа клиенту..." required></textarea>
+            <input type="hidden" id="modalMode" value="reply">
+            <div id="editRatingWrapper" style="display:none; align-items:center; gap:10px; margin-bottom:5px;">
+                <span class="rating-label">Оценка:</span>
+                <div class="rating-stars" id="modalStarContainer">
+                    <span data-value="1">★</span>
+                    <span data-value="2">★</span>
+                    <span data-value="3">★</span>
+                    <span data-value="4">★</span>
+                    <span data-value="5">★</span>
+                </div>
+                <input type="hidden" id="editReviewRating" value="5">
+            </div>
+            <textarea id="adminModalText" class="review-textarea" placeholder="Введите текст..." required></textarea>
+            <div id="modalProfanityError" class="profanity-error-msg">⚠️ Обнаружены запрещенные слова или мат!</div>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" class="action-btn delete-btn" id="closeAdminModal" style="background:#6b7280; border-color:#4b5563;">Отмена</button>
-                <button type="button" class="action-btn reply-admin-btn" id="sendAdminReplyBtn">Отправить ответ</button>
+                <button type="button" class="action-btn reply-admin-btn" id="sendAdminReplyBtn">Сохранить</button>
             </div>
         </div>
     </div>
@@ -602,7 +648,7 @@
         </div>
         <div style="margin-bottom: 12px; display: flex; gap: 8px;">
             <input type="text" id="fav-name-input" placeholder="Название набора" class="fav-input">
-            <button id="save-current-fav-btn" class="fav-save-btn">Сохранить текущий</button>
+            <button id="save-current-fav-dev-btn" class="fav-save-btn">Сохранить текущий</button>
         </div>
         <div id="favorites-popup-items" class="cart-popup-items"></div>
     </div>
@@ -635,13 +681,61 @@
 
     <script src="cart.js"></script>
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwfflnrHKORsMC-njH_OeXYGilFMqo1tMjd4NApgfenvQnbk49gGDLCKjbKzpnBThoVDA/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwGjt-ws8d1QyPu2boOwOMBux52AJtll8GCsWJ0gpv0iPO2vkttCqRh9EC1dw5Ni13PmQ/exec";
+
+        // ЖЕСТКИЙ АНТИМАТ ФИЛЬТР (включает русский матерный лексикон, корни, производные и грубые слова вроде говно/дерьмо)
+        const badWords = [
+            'хуй', 'хуя', 'хую', 'хуем', 'хуе', 'хуи', 'хую', 'хуев', 'хуях', 'хуями', 'охуе', 'захуе', 'похуе', 'ныхуя', 'нихуя', 'хуесос', 'хуепле', 'хуеверт',
+            'пизд', 'писд', 'пезд', 'пизда', 'пизды', 'пизде', 'пизду', 'пиздой', 'пиздой', 'пиздец', 'пиздеж', 'пиздеть', 'пиздит', 'спиздил', 'отпизди', 'пиздюк',
+            'еб', 'ебл', 'ебы', 'ебн', 'ебт', 'еба', 'ебы', 'ебе', 'ебу', 'еби', 'ебо', 'ебь', 'ебать', 'ебал', 'ебал', 'ебаный', 'ебану', 'ебнуть', 'ебнулся', 'выеб', 'заеб', 'поеб', 'наеб', 'подеб', 'обезбаш', 'уеб', 'перееб',
+            'бля', 'блять', 'блядь', 'бляд', 'блядина', 'бляду', 'блядо', 'блядск', 'бляди',
+            'сук', 'сука', 'суки', 'суку', 'сучка', 'сучкам', 'сучками',
+            'мраз', 'мразот', 'мрази', 'мразь',
+            'шлюх', 'шлюха', 'шлюхи', 'шлюшку',
+            'гондон', 'гандон', 'гондоны', 'гандоны',
+            'мудак', 'мудила', 'мудило', 'муди', 'модем',
+            'дерьм', 'дерьмо', 'дерьме', 'дерьмом', 'говн', 'говно', 'говна', 'говну', 'говне', 'говном', 'говен',
+            'сран', 'срать', 'срань', 'срал', 'серут', 'посрал', 'унитазный',
+            'чмо', 'чмыр', 'чмошник',
+            'пидор', 'пидар', 'педик', 'пидорас', 'пидарас', 'петух', 'петухи',
+            'залуп', 'залупа', 'манда', 'мудо', 'елда', 'елдын', 'дроч', 'дрочить', 'дрочил', 'задрот'
+        ];
+
+        function containsBadWords(text) {
+            if (!text) return false;
+            // Приводим текст к нижнему регистру и заменяем похожие латинские буквы на русские для обхода фильтра
+            let clean = text.toLowerCase()
+                .replace(/a/g, 'а').replace(/e/g, 'е').replace(/o/g, 'о').replace(/p/g, 'р')
+                .replace(/c/g, 'с').replace(/y/g, 'у').replace(/x/g, 'х').replace(/i/g, 'и')
+                .replace(/3/g, 'з').replace(/0/g, 'о').replace(/1/g, 'и');
+
+            // Убираем всё кроме букв для проверки корней
+            let words = clean.match(/[а-яё]+/g);
+            if (!words) return false;
+
+            for (let w of words) {
+                for (let bw of badWords) {
+                    if (w.includes(bw) || bw.includes(w)) {
+                        // Точная проверка или частичное совпадение корня
+                        if (w === bw || (w.length >= 3 && bw.length >= 3 && (w.startsWith(bw) || w.endsWith(bw) || w.includes(bw)))) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
 
         const stars = document.querySelectorAll('#starContainer span');
         const ratingInput = document.getElementById('reviewRating');
 
-        function updateStars(val) {
-            stars.forEach(s => {
+        const savedAuthor = localStorage.getItem('my_review_author');
+        if (savedAuthor) {
+            document.getElementById('reviewAuthor').value = savedAuthor;
+        }
+
+        function updateStars(val, container = stars) {
+            container.forEach(s => {
                 if (s.getAttribute('data-value') <= val) {
                     s.classList.add('active');
                 } else {
@@ -649,13 +743,23 @@
                 }
             });
         }
-        updateStars(5);
+        updateStars(5, stars);
 
         stars.forEach(star => {
             star.addEventListener('click', () => {
                 const val = star.getAttribute('data-value');
                 ratingInput.value = val;
-                updateStars(val);
+                updateStars(val, stars);
+            });
+        });
+
+        const modalStars = document.querySelectorAll('#modalStarContainer span');
+        const editRatingInput = document.getElementById('editReviewRating');
+        modalStars.forEach(star => {
+            star.addEventListener('click', () => {
+                const val = star.getAttribute('data-value');
+                editRatingInput.value = val;
+                updateStars(val, modalStars);
             });
         });
 
@@ -677,6 +781,7 @@
             
             const reviews = await fetchReviews();
             const isAdmin = localStorage.getItem('is_honey_admin') === 'true';
+            const currentAuthor = localStorage.getItem('my_review_author') || '';
 
             list.innerHTML = '';
 
@@ -700,15 +805,22 @@
 
                 const starsHtml = '★'.repeat(rev.rating || 5) + '☆'.repeat(5 - (rev.rating || 5));
                 let actionsHtml = '';
+                let isMyReview = currentAuthor && rev.author.toLowerCase() === currentAuthor.toLowerCase();
 
-                // Кнопки управления появляются автоматически при активном режиме админа
                 if (isAdmin) {
                     actionsHtml += `
-                        <div class="review-actions">
-                            <button class="action-btn reply-admin-btn" onclick="openAdminReplyModal('${rev.rowId}')">Ответить</button>
-                            <button class="action-btn delete-btn" onclick="removeReview('${rev.rowId}')">Удалить</button>
-                        </div>
+                        <button class="action-btn reply-admin-btn" onclick="openAdminReplyModal('${rev.rowId}')">Ответить</button>
+                        <button class="action-btn delete-btn" onclick="removeReview('${rev.rowId}', true)">Удалить</button>
                     `;
+                } else if (isMyReview) {
+                    actionsHtml += `
+                        <button class="action-btn edit-btn" onclick="openEditModal('${rev.rowId}', '${escapeAttr(rev.text)}', ${rev.rating || 5})">Редактировать</button>
+                        <button class="action-btn delete-btn" onclick="removeReview('${rev.rowId}', false)">Удалить</button>
+                    `;
+                }
+
+                if (actionsHtml) {
+                    actionsHtml = `<div class="review-actions">${actionsHtml}</div>`;
                 }
 
                 let adminReplyHtml = '';
@@ -755,7 +867,14 @@
             return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
+        function escapeAttr(text) {
+            if (!text) return '';
+            return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
         const form = document.getElementById('reviewForm');
+        const profanityErrorBox = document.getElementById('profanityError');
+
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -764,6 +883,16 @@
             const rating = parseInt(ratingInput.value);
 
             if (!authorInput || !textInput) return;
+
+            // Проверка антиматом
+            if (containsBadWords(authorInput) || containsBadWords(textInput)) {
+                profanityErrorBox.style.display = 'block';
+                return;
+            } else {
+                profanityErrorBox.style.display = 'none';
+            }
+
+            localStorage.setItem('my_review_author', authorInput);
 
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
@@ -786,26 +915,29 @@
                 if (result.status === 'admin_success') {
                     localStorage.setItem('is_honey_admin', 'true');
                     alert('Режим администратора успешно активирован на этом устройстве!');
+                } else if (result.status === 'success') {
+                    alert('Спасибо! Ваш отзыв успешно добавлен.');
                 }
 
                 form.reset();
+                document.getElementById('reviewAuthor').value = authorInput;
                 submitBtn.textContent = 'Оставить отзыв';
                 ratingInput.value = 5;
-                updateStars(5);
+                updateStars(5, stars);
                 
-                // Мгновенное обновление списка отзывов без перезагрузки
                 await renderReviews();
             } catch (error) {
                 console.error('Ошибка отправки:', error);
-                alert('Произошла ошибка при отправке. Проверьте подключение.');
+                alert('Не удалось отправить отзыв. Если он не появился, пожалуйста, проверьте соединение или обновите страницу.');
             } finally {
                 submitBtn.disabled = false;
             }
         });
 
-        window.removeReview = async function(rowId) {
-            if (confirm('Удалить этот отзыв?')) {
-                const adminPass = 'honey123';
+        window.removeReview = async function(rowId, isAdminAction) {
+            if (confirm('Вы уверены, что хотите удалить этот отзыв?')) {
+                const adminPass = isAdminAction ? 'honey123' : '';
+                const authorKey = localStorage.getItem('my_review_author') || '';
 
                 try {
                     const response = await fetch(WEB_APP_URL, {
@@ -814,24 +946,42 @@
                         body: JSON.stringify({
                             action: 'delete',
                             rowId: rowId,
-                            adminPass: adminPass
+                            adminPass: adminPass,
+                            authorKey: authorKey
                         })
                     });
                     const result = await response.json();
                     if (result.status === 'success') {
+                        alert('Отзыв успешно удален.');
                         await renderReviews();
                     } else {
                         alert(result.message || 'Ошибка удаления');
                     }
                 } catch (e) {
-                    alert('Ошибка соединения');
+                    alert('Ошибка соединения. Обновите страницу и попробуйте снова.');
                 }
             }
         };
 
         window.openAdminReplyModal = function(rowId) {
+            document.getElementById('modalTitle').textContent = 'Ответ администратора';
+            document.getElementById('modalMode').value = 'reply';
+            document.getElementById('editRatingWrapper').style.display = 'none';
             document.getElementById('replyRowId').value = rowId;
             document.getElementById('adminModalText').value = '';
+            document.getElementById('modalProfanityError').style.display = 'none';
+            document.getElementById('adminModal').classList.add('active');
+        };
+
+        window.openEditModal = function(rowId, text, rating) {
+            document.getElementById('modalTitle').textContent = 'Редактировать отзыв';
+            document.getElementById('modalMode').value = 'edit';
+            document.getElementById('editRatingWrapper').style.display = 'flex';
+            document.getElementById('replyRowId').value = rowId;
+            document.getElementById('adminModalText').value = text;
+            document.getElementById('editReviewRating').value = rating;
+            document.getElementById('modalProfanityError').style.display = 'none';
+            updateStars(rating, modalStars);
             document.getElementById('adminModal').classList.add('active');
         };
 
@@ -841,33 +991,57 @@
 
         document.getElementById('sendAdminReplyBtn').addEventListener('click', async () => {
             const rowId = document.getElementById('replyRowId').value;
-            const replyText = document.getElementById('adminModalText').value;
+            const mode = document.getElementById('modalMode').value;
+            const textVal = document.getElementById('adminModalText').value;
+            const modalErr = document.getElementById('modalProfanityError');
 
-            if (!replyText) {
-                alert('Введите текст ответа!');
+            if (!textVal) {
+                alert('Поле не может быть пустым!');
                 return;
             }
 
+            // Проверка антиматом в модалке (для редактирования клиентом)
+            if (mode === 'edit' && containsBadWords(textVal)) {
+                modalErr.style.display = 'block';
+                return;
+            } else {
+                modalErr.style.display = 'none';
+            }
+
             try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({
+                let bodyData = {};
+                if (mode === 'reply') {
+                    bodyData = {
                         action: 'adminReply',
                         rowId: rowId,
                         adminPass: 'honey123',
-                        replyText: replyText
-                    })
+                        replyText: textVal
+                    };
+                } else {
+                    bodyData = {
+                        action: 'editReview',
+                        rowId: rowId,
+                        authorKey: localStorage.getItem('my_review_author') || '',
+                        newText: textVal,
+                        newRating: parseInt(document.getElementById('editReviewRating').value)
+                    };
+                }
+
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(bodyData)
                 });
                 const result = await response.json();
                 if (result.status === 'success') {
+                    alert('Изменения успешно сохранены!');
                     document.getElementById('adminModal').classList.remove('active');
                     await renderReviews();
                 } else {
-                    alert(result.message || 'Ошибка отправки ответа');
+                    alert(result.message || 'Ошибка выполнения операции');
                 }
             } catch (e) {
-                alert('Ошибка соединения');
+                alert('Ошибка соединения. Обновите страницу.');
             }
         });
 
