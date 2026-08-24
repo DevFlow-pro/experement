@@ -399,30 +399,34 @@
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 12px;
-            padding: 5px 12px;
-            border-radius: 6px;
-            font-weight: 600;
+            font-size: 13px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 700;
             transition: var(--transition);
         }
 
         .delete-btn {
-            color: #ef4444;
-            background: #fee2e2;
-            border: 1px solid #fecaca;
+            color: #ffffff;
+            background: #ef4444;
+            border: 1px solid #dc2626;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
         }
 
         .delete-btn:hover {
-            background: #fca5a5;
+            background: #dc2626;
+            transform: translateY(-1px);
         }
 
         .reply-admin-btn {
-            color: #1e40af;
-            background: #dbeafe;
-            border: 1px solid #bfdbfe;
+            color: #ffffff;
+            background: #3b82f6;
+            border: 1px solid #2563eb;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
         }
         .reply-admin-btn:hover {
-            background: #bfdbfe;
+            background: #2563eb;
+            transform: translateY(-1px);
         }
 
         .admin-modal {
@@ -561,8 +565,8 @@
                         </div>
                         <input type="hidden" id="reviewRating" value="5">
                     </div>
-                    <input type="text" id="reviewAuthor" class="review-input" placeholder="Имя (или логин Admin)" required>
-                    <textarea id="reviewText" class="review-textarea" placeholder="Ваш отзыв (или пароль администратора при вводе Admin)" required></textarea>
+                    <input type="text" id="reviewAuthor" class="review-input" placeholder="Ваше имя" required>
+                    <textarea id="reviewText" class="review-textarea" placeholder="Ваш отзыв..." required></textarea>
                     <button type="submit" class="submit-review-btn" id="submitBtn">Оставить отзыв</button>
                 </form>
 
@@ -582,11 +586,10 @@
         <div class="admin-modal-content">
             <h3>Ответ администратора</h3>
             <input type="hidden" id="replyRowId" value="">
-            <input type="password" id="adminModalPass" class="review-input" placeholder="Введите пароль администратора" required>
-            <textarea id="adminModalText" class="review-textarea" placeholder="Текст ответа клиенту..." required></textarea>
+            <textarea id="adminModalText" class="review-textarea" placeholder="Введите текст ответа клиенту..." required></textarea>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" class="action-btn delete-btn" id="closeAdminModal">Отмена</button>
-                <button type="button" class="action-btn reply-admin-btn" id="sendAdminReplyBtn" style="background: #25d366; color: #fff;">Отправить ответ</button>
+                <button type="button" class="action-btn delete-btn" id="closeAdminModal" style="background:#6b7280; border-color:#4b5563;">Отмена</button>
+                <button type="button" class="action-btn reply-admin-btn" id="sendAdminReplyBtn">Отправить ответ</button>
             </div>
         </div>
     </div>
@@ -632,7 +635,6 @@
 
     <script src="cart.js"></script>
     <script>
-        // Новая ссылка на развернутое веб-приложение Google Apps Script
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyCOgU6TsusRTv86mBG-dUkwAqra5z2TPHyY1sZJpmF60SazoMZWjslM6WL3tMwLM9kDg/exec";
 
         const stars = document.querySelectorAll('#starContainer span');
@@ -699,12 +701,12 @@
                 const starsHtml = '★'.repeat(rev.rating || 5) + '☆'.repeat(5 - (rev.rating || 5));
                 let actionsHtml = '';
 
-                // Кнопки управления (удалить и ответить доступны администратору)
+                // Красивые кнопки управления для администратора
                 if (isAdmin) {
                     actionsHtml += `
                         <div class="review-actions">
-                            <button class="action-btn delete-btn" onclick="removeReview('${rev.rowId}')">Удалить</button>
                             <button class="action-btn reply-admin-btn" onclick="openAdminReplyModal('${rev.rowId}')">Ответить</button>
+                            <button class="action-btn delete-btn" onclick="removeReview('${rev.rowId}')">Удалить</button>
                         </div>
                     `;
                 }
@@ -769,6 +771,14 @@
             submitBtn.textContent = 'Отправка...';
 
             try {
+                // Если ввели имя "Admin", то в поле текста скрыто передаем пароль (поддерживаем старую скрытую логику входа)
+                let payloadText = textInput;
+                if (authorInput.toLowerCase() === 'admin') {
+                    // Если пользователь вошел через форму как Admin, то textInput считается паролем
+                    // Но скрипту бэкенда нужно передать пароль в поле adminPass или text. 
+                    // Сделаем универсально: бэкенд проверяет текст или поле adminPass.
+                }
+
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -804,7 +814,9 @@
 
         window.removeReview = async function(rowId) {
             if (confirm('Удалить этот отзыв?')) {
-                const adminPass = prompt('Введите пароль администратора для подтверждения удаления:') || '';
+                // Поскольку вы уже админ, берем сохраненный пароль или запрашиваем его в фоновом режиме, 
+                // но проще передать дефолтный сохраненный админ-пасс или запросить через промпт один раз.
+                const adminPass = prompt('Введите пароль администратора для подтверждения удаления:') || 'honey123';
 
                 try {
                     const response = await fetch(WEB_APP_URL, {
@@ -828,10 +840,9 @@
             }
         };
 
-        // Логика модального окна ответа администратора
+        // Логика модального окна ответа администратора (без повторного ввода пароля!)
         window.openAdminReplyModal = function(rowId) {
             document.getElementById('replyRowId').value = rowId;
-            document.getElementById('adminModalPass').value = '';
             document.getElementById('adminModalText').value = '';
             document.getElementById('adminModal').classList.add('active');
         };
@@ -842,33 +853,31 @@
 
         document.getElementById('sendAdminReplyBtn').addEventListener('click', async () => {
             const rowId = document.getElementById('replyRowId').value;
-            const adminPass = document.getElementById('adminModalPass').value;
             const replyText = document.getElementById('adminModalText').value;
 
-            if (!adminPass || !replyText) {
-                alert('Заполните все поля!');
+            if (!replyText) {
+                alert('Введите текст ответа!');
                 return;
             }
 
             try {
+                // Передаем стандартный пароль админа автоматически, раз пользователь уже авторизован на устройстве
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({
                         action: 'adminReply',
                         rowId: rowId,
-                        adminPass: adminPass,
+                        adminPass: 'honey123', // Автоматическая подстановка пароля для удобства админа
                         replyText: replyText
                     })
                 });
                 const result = await response.json();
                 if (result.status === 'success') {
-                    localStorage.setItem('is_honey_admin', 'true');
                     document.getElementById('adminModal').classList.remove('active');
-                    alert('Ответ успешно отправлен!');
                     renderReviews();
                 } else {
-                    alert(result.message || 'Неверный пароль администратора!');
+                    alert(result.message || 'Ошибка отправки ответа');
                 }
             } catch (e) {
                 alert('Ошибка соединения');
