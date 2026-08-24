@@ -357,12 +357,18 @@
         }
 
         .playmarket-reply-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             font-size: 13px;
         }
 
         .playmarket-reply-author {
             font-weight: 800;
             color: #713f12;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .playmarket-reply-text {
@@ -370,7 +376,6 @@
             color: #451a03;
             line-height: 1.4;
             word-break: break-word;
-            margin-top: 2px;
         }
 
         .review-actions {
@@ -581,7 +586,7 @@
                     <input type="text" id="reviewAuthor" class="review-input" placeholder="Ваше имя" required>
                     <textarea id="reviewText" class="review-textarea" placeholder="Ваш отзыв..." required></textarea>
                     
-                    <div id="profanityError" class="profanity-error-msg">⚠️ Ругательства, оскорбления (по полу, религии, нации) и нецензурная лексика в этом отзыве неприемлемы!</div>
+                    <div id="profanityError" class="profanity-error-msg">⚠️ Запрещены маты, ругательства, оскорбления (в т.ч. упоминания родных, нации, расы и пола)! Пожалуйста, соблюдайте уважение.</div>
 
                     <button type="submit" class="submit-review-btn" id="submitBtn">Оставить отзыв</button>
                 </form>
@@ -603,6 +608,12 @@
             <h3 id="modalTitle">Ответ администратора</h3>
             <input type="hidden" id="replyRowId" value="">
             <input type="hidden" id="modalMode" value="reply">
+            
+            <div id="editAuthorWrapper" style="display:none; flex-direction:column; gap:5px;">
+                <span class="rating-label">Имя автора:</span>
+                <input type="text" id="editReviewAuthor" class="review-input" placeholder="Ваше имя">
+            </div>
+
             <div id="editRatingWrapper" style="display:none; align-items:center; gap:10px; margin-bottom:5px;">
                 <span class="rating-label">Оценка:</span>
                 <div class="rating-stars" id="modalStarContainer">
@@ -614,8 +625,9 @@
                 </div>
                 <input type="hidden" id="editReviewRating" value="5">
             </div>
+            
             <textarea id="adminModalText" class="review-textarea" placeholder="Введите текст..." required></textarea>
-            <div id="modalProfanityError" class="profanity-error-msg">⚠️ Обнаружены запрещенные слова или оскорбления!</div>
+            <div id="modalProfanityError" class="profanity-error-msg">⚠️ Обнаружены запрещенные слова или мат!</div>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button type="button" class="action-btn delete-btn" id="closeAdminModal" style="background:#6b7280; border-color:#4b5563;">Отмена</button>
                 <button type="button" class="action-btn reply-admin-btn" id="sendAdminReplyBtn">Сохранить</button>
@@ -664,13 +676,21 @@
 
     <script src="cart.js"></script>
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwGjt-ws8d1QyPu2boOwOMBux52AJtll8GCsWJ0gpv0iPO2vkttCqRh9EC1dw5Ni13PmQ/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxJqP4nBfVzwKeuvFUbsfq1nVCkcKjjM0-2B121R7vLsXpJHHiO9HOOhjdfLLmc7iuFzg/exec";
 
-        // КОМПЛЕКСНЫЙ АНТИМАТ И ФИЛЬТР ОСКОРБЛЕНИЙ (РУССКИЙ, КАЗАХСКИЙ, АНГЛИЙСКИЙ + РЕЛИГИЯ/ПОЛ/РАСА)
+        // МАКСИМАЛЬНО РАСШИРЕННЫЙ АНТИМАТ ФИЛЬТР (русский, казахский, английский маты, упоминания шешен/родственников и оскорбления)
         const badWords = [
-            // Русский мат и грубые слова
-            'хуй', 'хуя', 'хую', 'хуем', 'хуе', 'хуи', 'хуев', 'хуях', 'хуями', 'охуе', 'захуе', 'похуе', 'ныхуя', 'нихуя', 'хуесос', 'хуепл', 'хуеверт',
-            'пизд', 'писд', 'пезд', 'пизда', 'пизды', 'пизде', 'пизду', 'пиздой', 'пиздец', 'пиздеж', 'пиздеть', 'пиздит', 'спиздил', 'отпизди', 'пиздюк',
+            // Казахские маты, ругательства и грубые оскорбления (включая шешен и производные)
+            'шешен', 'шешең', 'шешенд', 'шешени', 'шешені', 'шеше', 'шешенник', 'шешенго',
+            'қотақ', 'котак', 'қотақбас', 'котакбас', 'қотақбасы', 'құйғақ', 'міс', 'мис', 
+            'текпе', 'сасық', 'сасык', 'сисек', 'амы', 'ам', 'ама', 'қобын', 'кобын', 
+            'жезөкше', 'жезокше', 'қатын', 'катын', 'қаңбақ', 'мұрын', 'есек', 'есеке', 
+            'ит', 'иттің', 'иттин', 'иттер', 'шошқа', 'шошка', 'пасық', 'пасык', 
+            'бәле', 'бале', 'надан', 'тезек', 'маймақ', 'қаракөс', 'құрт', 'арыз',
+
+            // Русский мат и грубые сленговые ругательства
+            'хуй', 'хуя', 'хую', 'хуем', 'хуе', 'хуи', 'хуев', 'хуях', 'хуями', 'охуе', 'захуе', 'похуе', 'ныхуя', 'нихуя', 'хуесос', 'хуепл', 'хуеверт', 'уебан', 'уебок',
+            'пизд', 'писд', 'пезд', 'пизда', 'пизды', 'пизде', 'пизду', 'пиздой', 'пиздец', 'пиздеж', 'пиздеть', 'пиздит', 'спиздил', 'отпизди', 'пиздюк', 'пездюк',
             'еб', 'ебл', 'ебы', 'ебн', 'ебт', 'еба', 'ебе', 'ебу', 'еби', 'ебо', 'ебь', 'ебать', 'ебал', 'ебаный', 'ебану', 'ебнуть', 'ебнулся', 'выеб', 'заеб', 'поеб', 'наеб', 'уеб', 'перееб',
             'бля', 'блять', 'блядь', 'бляд', 'блядина', 'бляду', 'блядо', 'блядск', 'бляди',
             'сук', 'сука', 'суки', 'суку', 'сучка', 'сучкам', 'сучками',
@@ -681,32 +701,14 @@
             'дерьм', 'дерьмо', 'дерьме', 'дерьмом', 'говн', 'говно', 'говна', 'говну', 'говне', 'говном', 'говен',
             'сран', 'срать', 'срань', 'срал', 'серут', 'посрал',
             'чмо', 'чмыр', 'чмошник',
-            'пидор', 'пидар', 'педик', 'пидорас', 'пидарас', 'петух', 'петухи', 'сайқал',
+            'пидор', 'пидар', 'педик', 'пидорас', 'пидарас', 'петух', 'петухи',
             'залуп', 'залупа', 'манда', 'мудо', 'елда', 'елдын', 'дроч', 'дрочить', 'дрочил', 'задрот',
+            
+            // Английские маты и оскорбления (включая сокращения)
+            'fuck', 'fuk', 'fcking', 'fucker', 'motherfucker', 'shit', 'sht', 'shitty', 'bitch', 'btch', 'bastard', 'asshole', 'ass', 'dick', 'cock', 'pussy', 'whore', 'slut', 'cunt', 'crap', 'idiot', 'retard', 'nigga', 'nigger', 'fag', 'faggot',
 
-            // Казахский мат и грубые слова (включая популярные оскорбления и корни)
-            'қотақ', 'котак', 'құтақ', 'кутак', 'қотақбас', 'котакбас', 'қотағым',
-            'текпе', 'мисыз', 'ақымақ', 'акымак', 'есек', 'айғыр', 'сирақ',
-            'шешен', 'шешең', 'шешенин', 'шешенді', 'шешенс', 'шешеңді', 'шешени', 'мамбет', 'мамбети',
-            'сөг', 'сог', 'боқ', 'бок', 'боғы', 'бокы', 'арыстанбас',
-            'сайкал', 'сайқал', 'жынды', 'ебанутый', 'сирак', 'арсыз',
-
-            // Английский мат и оскорбления (English profanity)
-            'fuck', 'fucker', 'fucking', 'fucked', 'motherfucker',
-            'shit', 'shitty', 'bullshit', 'shitter',
-            'bitch', 'bitches', 'bitchy',
-            'asshole', 'ass', 'assholes',
-            'dick', 'dickhead', 'dicks',
-            'cunt', 'cunts',
-            'bastard', 'bastards',
-            'whore', 'slut', 'sluts',
-            'cock', 'cocksucker',
-            'pussy', 'piss', 'prick', 'crap', 'nigger', 'nigga', 'fag', 'faggot', 'retard',
-
-            // Оскорбления по религии, полу, расе и дискриминация (рус/каз/англ)
-            'жид', 'хач', 'чурка', 'ниггер', 'черножоп', 'узкоглаз', 'косоглаз',
-            'хохол', 'кацап', 'москаль', 'пиндос', 'бусурман', 'неверный',
-            'гей', 'лесби', 'транс', 'педофил', 'шлюха', 'проститутка'
+            // Расовые, половые, нацистские и гендерные оскорбления
+            'хач', 'чурка', 'жид', 'ниггер', 'нигер', 'узкоглаз', 'черножоп', 'косоглаз', 'пидорс', 'трансфо', 'фашист', 'нацист', 'нацик', 'педофил', 'педо'
         ];
 
         function containsBadWords(text) {
@@ -716,13 +718,15 @@
                 .replace(/c/g, 'с').replace(/y/g, 'у').replace(/x/g, 'х').replace(/i/g, 'и')
                 .replace(/3/g, 'з').replace(/0/g, 'о').replace(/1/g, 'и');
 
-            let words = clean.match(/[а-яөұүіәғқңһa-z]+/g);
+            let words = clean.match(/[a-zа-яёқғңөұүһіә]+/g);
             if (!words) return false;
 
             for (let w of words) {
                 for (let bw of badWords) {
-                    if (w === bw || (w.length >= 3 && bw.length >= 3 && (w.includes(bw) || bw.startsWith(bw) || bw.endsWith(bw)))) {
-                        return true;
+                    if (w.includes(bw) || bw.includes(w)) {
+                        if (w === bw || (w.length >= 3 && bw.length >= 3 && (w.startsWith(bw) || w.endsWith(bw) || w.includes(bw)))) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -817,7 +821,7 @@
                     `;
                 } else if (isMyReview) {
                     actionsHtml += `
-                        <button class="action-btn edit-btn" onclick="openEditModal('${rev.rowId}', '${escapeAttr(rev.text)}', ${rev.rating || 5})">Редактировать</button>
+                        <button class="action-btn edit-btn" onclick="openEditModal('${rev.rowId}', '${escapeAttr(rev.author)}', '${escapeAttr(rev.text)}', ${rev.rating || 5})">Редактировать</button>
                         <button class="action-btn delete-btn" onclick="removeReview('${rev.rowId}', false)">Удалить</button>
                     `;
                 }
@@ -831,7 +835,9 @@
                     adminReplyHtml = `
                         <div class="playmarket-reply-box">
                             <div class="playmarket-reply-header">
-                                <span class="playmarket-reply-author">Пасека «Натуральный мёд»</span>
+                                <span class="playmarket-reply-author">
+                                    Пасека «Натуральный мёд»
+                                </span>
                             </div>
                             <div class="playmarket-reply-text">${escapeHtml(rev.adminReply)}</div>
                         </div>
@@ -913,6 +919,9 @@
 
                 if (result.status === 'admin_success') {
                     localStorage.setItem('is_honey_admin', 'true');
+                    alert('Режим администратора успешно активирован на этом устройстве!');
+                } else if (result.status === 'success') {
+                    alert('Отзыв отправлен! Если он не появился сразу, пожалуйста, обновите страницу.');
                 }
 
                 form.reset();
@@ -924,6 +933,8 @@
                 await renderReviews();
             } catch (error) {
                 console.error('Ошибка отправки:', error);
+                alert('Отзыв отправлен. Если он не появился, пожалуйста, обновите страницу.');
+                await renderReviews();
             } finally {
                 submitBtn.disabled = false;
             }
@@ -947,10 +958,13 @@
                     });
                     const result = await response.json();
                     if (result.status === 'success') {
+                        alert('Отзыв успешно удален.');
                         await renderReviews();
+                    } else {
+                        alert(result.message || 'Ошибка удаления');
                     }
                 } catch (e) {
-                    console.error(e);
+                    alert('Ошибка соединения. Обновите страницу и попробуйте снова.');
                 }
             }
         };
@@ -958,6 +972,7 @@
         window.openAdminReplyModal = function(rowId) {
             document.getElementById('modalTitle').textContent = 'Ответ администратора';
             document.getElementById('modalMode').value = 'reply';
+            document.getElementById('editAuthorWrapper').style.display = 'none';
             document.getElementById('editRatingWrapper').style.display = 'none';
             document.getElementById('replyRowId').value = rowId;
             document.getElementById('adminModalText').value = '';
@@ -965,9 +980,11 @@
             document.getElementById('adminModal').classList.add('active');
         };
 
-        window.openEditModal = function(rowId, text, rating) {
+        window.openEditModal = function(rowId, author, text, rating) {
             document.getElementById('modalTitle').textContent = 'Редактировать отзыв';
             document.getElementById('modalMode').value = 'edit';
+            document.getElementById('editAuthorWrapper').style.display = 'flex';
+            document.getElementById('editReviewAuthor').value = author;
             document.getElementById('editRatingWrapper').style.display = 'flex';
             document.getElementById('replyRowId').value = rowId;
             document.getElementById('adminModalText').value = text;
@@ -985,15 +1002,25 @@
             const rowId = document.getElementById('replyRowId').value;
             const mode = document.getElementById('modalMode').value;
             const textVal = document.getElementById('adminModalText').value;
+            const newAuthorVal = document.getElementById('editReviewAuthor').value.trim();
             const modalErr = document.getElementById('modalProfanityError');
 
-            if (!textVal) return;
-
-            if (mode === 'edit' && containsBadWords(textVal)) {
-                modalErr.style.display = 'block';
+            if (!textVal) {
+                alert('Поле текста не может быть пустым!');
                 return;
-            } else {
-                modalErr.style.display = 'none';
+            }
+
+            if (mode === 'edit') {
+                if (!newAuthorVal) {
+                    alert('Имя автора не может быть пустым!');
+                    return;
+                }
+                if (containsBadWords(newAuthorVal) || containsBadWords(textVal)) {
+                    modalErr.style.display = 'block';
+                    return;
+                } else {
+                    modalErr.style.display = 'none';
+                }
             }
 
             try {
@@ -1010,9 +1037,11 @@
                         action: 'editReview',
                         rowId: rowId,
                         authorKey: localStorage.getItem('my_review_author') || '',
+                        newAuthor: newAuthorVal,
                         newText: textVal,
                         newRating: parseInt(document.getElementById('editReviewRating').value)
                     };
+                    localStorage.setItem('my_review_author', newAuthorVal);
                 }
 
                 const response = await fetch(WEB_APP_URL, {
@@ -1022,11 +1051,15 @@
                 });
                 const result = await response.json();
                 if (result.status === 'success') {
+                    alert('Изменения успешно сохранены! Обновите страницу, если они не отобразились.');
                     document.getElementById('adminModal').classList.remove('active');
                     await renderReviews();
+                } else {
+                    alert(result.message || 'Ошибка выполнения операции');
                 }
             } catch (e) {
-                console.error(e);
+                alert('Ошибка соединения. Обновите страницу.');
+                await renderReviews();
             }
         });
 
