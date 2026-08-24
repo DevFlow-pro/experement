@@ -635,7 +635,7 @@
 
     <script src="cart.js"></script>
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyCOgU6TsusRTv86mBG-dUkwAqra5z2TPHyY1sZJpmF60SazoMZWjslM6WL3tMwLM9kDg/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwfflnrHKORsMC-njH_OeXYGilFMqo1tMjd4NApgfenvQnbk49gGDLCKjbKzpnBThoVDA/exec";
 
         const stars = document.querySelectorAll('#starContainer span');
         const ratingInput = document.getElementById('reviewRating');
@@ -701,7 +701,7 @@
                 const starsHtml = '★'.repeat(rev.rating || 5) + '☆'.repeat(5 - (rev.rating || 5));
                 let actionsHtml = '';
 
-                // Красивые кнопки управления для администратора
+                // Кнопки управления появляются автоматически при активном режиме админа
                 if (isAdmin) {
                     actionsHtml += `
                         <div class="review-actions">
@@ -711,7 +711,6 @@
                     `;
                 }
 
-                // Официальный ответ администратора
                 let adminReplyHtml = '';
                 if (rev.adminReply) {
                     adminReplyHtml = `
@@ -771,14 +770,6 @@
             submitBtn.textContent = 'Отправка...';
 
             try {
-                // Если ввели имя "Admin", то в поле текста скрыто передаем пароль (поддерживаем старую скрытую логику входа)
-                let payloadText = textInput;
-                if (authorInput.toLowerCase() === 'admin') {
-                    // Если пользователь вошел через форму как Admin, то textInput считается паролем
-                    // Но скрипту бэкенда нужно передать пароль в поле adminPass или text. 
-                    // Сделаем универсально: бэкенд проверяет текст или поле adminPass.
-                }
-
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -795,15 +786,15 @@
                 if (result.status === 'admin_success') {
                     localStorage.setItem('is_honey_admin', 'true');
                     alert('Режим администратора успешно активирован на этом устройстве!');
-                } else if (result.status === 'success') {
-                    alert('Отзыв успешно добавлен!');
                 }
 
                 form.reset();
                 submitBtn.textContent = 'Оставить отзыв';
                 ratingInput.value = 5;
                 updateStars(5);
-                renderReviews();
+                
+                // Мгновенное обновление списка отзывов без перезагрузки
+                await renderReviews();
             } catch (error) {
                 console.error('Ошибка отправки:', error);
                 alert('Произошла ошибка при отправке. Проверьте подключение.');
@@ -814,9 +805,7 @@
 
         window.removeReview = async function(rowId) {
             if (confirm('Удалить этот отзыв?')) {
-                // Поскольку вы уже админ, берем сохраненный пароль или запрашиваем его в фоновом режиме, 
-                // но проще передать дефолтный сохраненный админ-пасс или запросить через промпт один раз.
-                const adminPass = prompt('Введите пароль администратора для подтверждения удаления:') || 'honey123';
+                const adminPass = 'honey123';
 
                 try {
                     const response = await fetch(WEB_APP_URL, {
@@ -830,7 +819,7 @@
                     });
                     const result = await response.json();
                     if (result.status === 'success') {
-                        renderReviews();
+                        await renderReviews();
                     } else {
                         alert(result.message || 'Ошибка удаления');
                     }
@@ -840,7 +829,6 @@
             }
         };
 
-        // Логика модального окна ответа администратора (без повторного ввода пароля!)
         window.openAdminReplyModal = function(rowId) {
             document.getElementById('replyRowId').value = rowId;
             document.getElementById('adminModalText').value = '';
@@ -861,21 +849,20 @@
             }
 
             try {
-                // Передаем стандартный пароль админа автоматически, раз пользователь уже авторизован на устройстве
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({
                         action: 'adminReply',
                         rowId: rowId,
-                        adminPass: 'honey123', // Автоматическая подстановка пароля для удобства админа
+                        adminPass: 'honey123',
                         replyText: replyText
                     })
                 });
                 const result = await response.json();
                 if (result.status === 'success') {
                     document.getElementById('adminModal').classList.remove('active');
-                    renderReviews();
+                    await renderReviews();
                 } else {
                     alert(result.message || 'Ошибка отправки ответа');
                 }
